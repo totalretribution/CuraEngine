@@ -223,7 +223,7 @@ private:
     void processSliceData(SliceDataStorage& storage)
     {
         const unsigned int totalLayers = storage.volumes[0].layers.size();
-        
+
         //carveMultipleVolumes(storage.volumes);
         generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
         //dumpLayerparts(storage, "c:/models/output.html");
@@ -578,7 +578,7 @@ private:
             }
             if (config.spiralizeMode)
                 inset0Config.spiralize = true;
-            
+
             gcodeLayer.addPolygonsByOptimizer(polygons, &inset0Config);
             return;
         }
@@ -656,15 +656,28 @@ private:
                     if (static_cast<int>(layerNr) == config.downSkinCount && part->insets.size() > 0)
                         gcodeLayer.addPolygonsByOptimizer(part->insets[0], &insetXConfig);
                 }
-                for(int insetNr=part->insets.size()-1; insetNr>-1; insetNr--)
+                if (!config.enableReverseInsetOrder)
                 {
-                    if (insetNr == 0)
-                        gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &inset0Config);
-                    else
-                        gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &insetXConfig);
+                    for(int insetNr=part->insets.size()-1; insetNr>-1; insetNr--)
+                    {
+                        if (insetNr == 0)
+                            gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &inset0Config);
+                        else
+                            gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &insetXConfig);
+                    }
+                }
+                else
+                {
+                    for(unsigned int insetNr=0; insetNr<part->insets.size(); insetNr++)
+                    {
+                        if (insetNr == 0)
+                            gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &inset0Config);
+                        else
+                            gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &insetXConfig);
+                    }
                 }
             }
-            
+
             Polygons skinPolygons;
             for(Polygons outline : part->skinOutline.splitIntoParts())
             {
